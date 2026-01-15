@@ -79,11 +79,11 @@ const Head = () => {
           </button>
         </div>
         {showSuggestions && suggestions && (
-          <div className="bg-white w-2/5 px-8 fixed mx-64 rounded-lg shadow-lg border border-gray-100">
+          <div className="bg-white w-2/5 px-1 fixed mx-64 rounded-lg shadow-lg border border-gray-100">
             <ul>
               {suggestions.map((suggestion, index) => (
                 <li
-                  className="text-gray-700 border-b-2 border-gray-50"
+                  className="text-gray-700 border-b-2 border-gray-50 hover:bg-slate-200"
                   key={index}
                 >
                   {suggestion}

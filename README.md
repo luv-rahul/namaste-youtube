@@ -1247,3 +1247,248 @@ export default CommentsContainer;
 | **Recursive Comments** | Nested comment structure with unlimited depth | Clean, scalable UI          |
 
 ---
+
+# Namaste Youtube - Wrapping up Youtube Project
+
+## Live Chat
+
+Challenges:
+
+- Get Live Data -> Data Layer
+- Update the UI -> UI Layer
+
+---
+
+- Data (Live)
+
+* Web Sockets UI-------Server(Two way Handshake) -> No regular interval
+
+- Stock Market (Live - Real Time)
+- Whatsapp
+
+* API Polling UI<------Server -> Interval
+
+- GMAIL
+- Cricbuzz
+
+chatSlice.js
+
+```js
+import { createSlice } from "@reduxjs/toolkit";
+
+const chatSlice = createSlice({
+  name: "chat",
+  initialState: {
+    messages: [],
+  },
+  reducers: {
+    addMessage: (state, action) => {
+      state.messages.push(action.payload);
+    },
+  },
+});
+
+export const { addMessage } = chatSlice.actions;
+export default chatSlice.reducer;
+```
+
+appStore.js
+
+```js
+import { createSlice } from "@reduxjs/toolkit";
+
+const appSlice = createSlice({
+  name: "app",
+  initialState: {
+    isMenuOpen: false,
+  },
+  reducers: {
+    toggleMenu: (state, action) => {
+      state.isMenuOpen = !state.isMenuOpen;
+    },
+    closeMenu: (state) => {
+      state.isMenuOpen = false;
+    },
+  },
+});
+
+export const { toggleMenu, closeMenu } = appSlice.actions;
+export default appSlice.reducer;
+```
+
+helper.js
+
+```js
+export const liveChatMessages = [
+  { id: 1, name: "Rahul", message: "Hello everyone 👋" },
+  { id: 2, name: "Ananya", message: "This stream is awesome 🔥" },
+  { id: 3, name: "Vikram", message: "Watching from Delhi 🇮🇳" },
+  { id: 4, name: "Priya", message: "Can you explain this part again?" },
+  { id: 5, name: "Aman", message: "First time here, hi all 😊" },
+  { id: 6, name: "Neha", message: "Audio is clear now 👍" },
+  { id: 7, name: "Suresh", message: "Loved the last example 💯" },
+  { id: 8, name: "Kiran", message: "Please share the repo link 🙏" },
+  { id: 9, name: "Pooja", message: "This helped a lot, thanks!" },
+  { id: 10, name: "Rohit", message: "Lag ho raha hai thoda 😅" },
+  { id: 11, name: "Sneha", message: "Perfect explanation 👌" },
+  { id: 12, name: "Arjun", message: "Is this beginner friendly?" },
+  { id: 13, name: "Mehul", message: "Subscribed just now 🔔" },
+  { id: 14, name: "Isha", message: "From Mumbai ❤️" },
+  { id: 15, name: "Dev", message: "Can you slow down a bit?" },
+  { id: 16, name: "Simran", message: "Best live session till now 🔥" },
+  { id: 17, name: "Nikhil", message: "React rocks 🚀" },
+  { id: 18, name: "Tanya", message: "Hello chat 💕" },
+];
+
+export const randomMessageGenerator = () => {
+  const random = Math.floor(Math.random() * liveChatMessages.length);
+  const message = liveChatMessages[random];
+  return message;
+};
+```
+
+LiveChat.js
+
+```js
+import { useEffect } from "react";
+import ChatMessage from "./ChatMessage";
+import { useDispatch, useSelector } from "react-redux";
+import { addMessage } from "../utils/chatSlice";
+import { randomMessageGenerator } from "../utils/helper";
+
+const LiveChat = () => {
+  const dispatch = useDispatch();
+  const chatMessages = useSelector((store) => store.chat.messages);
+
+  useEffect(() => {
+    /*API Polling*/
+    const i = setInterval(() => {
+      const randomMessage = randomMessageGenerator();
+      dispatch(addMessage(randomMessage));
+    }, 2000);
+
+    return () => {
+      clearInterval(i);
+    };
+  }, []);
+
+  return (
+    <div className="mx-1 bg-slate-200 rounded-lg p-3 h-[600px] w-full overflow-y-scroll">
+      <h1>Live Chat 🔴</h1>
+      {chatMessages &&
+        chatMessages.map((c) => (
+          <ChatMessage name={c.name} key={c.id} message={c.message} />
+        ))}
+    </div>
+  );
+};
+
+export default LiveChat;
+```
+
+ChatMessages.js
+
+```js
+const ChatMessage = ({ name, message }) => {
+  return (
+    <div>
+      <div className="flex items-center shadow-md p-2 rounded-sm">
+        <span class="material-symbols-outlined w-10">account_circle</span>
+        <h1 className="font-semibold">{name}:</h1>
+        <p className="px-2 text-sm">{message}</p>
+      </div>
+    </div>
+  );
+};
+
+export default ChatMessage;
+```
+
+LiveChat.js
+
+```js
+import { useEffect, useState } from "react";
+import ChatMessage from "./ChatMessage";
+import { useDispatch, useSelector } from "react-redux";
+import { addMessage } from "../utils/chatSlice";
+import { randomMessageGenerator } from "../utils/helper";
+
+const LiveChat = () => {
+  const dispatch = useDispatch();
+  const chatMessages = useSelector((store) => store.chat.messages);
+  const [liveMessage, setLiveMessage] = useState("");
+
+  useEffect(() => {
+    /*API Polling*/
+    const i = setInterval(() => {
+      const randomMessage = randomMessageGenerator();
+      dispatch(addMessage(randomMessage));
+    }, 2000);
+
+    return () => {
+      clearInterval(i);
+    };
+  }, []);
+
+  return (
+    <>
+      <h1 className="font-bold bg-white mx-2 rounded-t-lg px-3 py-1 border-2">
+        Live Chat 🔴
+      </h1>
+      <div className="mx-2 bg-slate-200 rounded-b-lg p-3 h-[560px] w-full overflow-y-scroll flex flex-col-reverse">
+        {chatMessages &&
+          chatMessages.map((c) => (
+            <ChatMessage name={c.name} key={c.id} message={c.message} />
+          ))}
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          dispatch(
+            addMessage({
+              name: "Rahul",
+              message: liveMessage,
+            })
+          );
+          setLiveMessage("");
+        }}
+        className="border-b border-gray-400"
+      >
+        <input
+          type="text"
+          placeholder="Enter message"
+          className="px-2 mx-2 w-3/4 mt-2 border-b border-black"
+          value={liveMessage}
+          onChange={(e) => setLiveMessage(e.target.value)}
+        ></input>
+        <button className="bg-green-300 px-2 rounded-lg">Send</button>
+      </form>
+    </>
+  );
+};
+
+export default LiveChat;
+```
+
+ChatSlice.js
+
+```js
+import { createSlice } from "@reduxjs/toolkit";
+import { OFFSET_LIVE_CHAT } from "./constants";
+
+const chatSlice = createSlice({
+  name: "chat",
+  initialState: {
+    messages: [],
+  },
+  reducers: {
+    addMessage: (state, action) => {
+      state.messages.slice(OFFSET_LIVE_CHAT, 1);
+      state.messages.unshift(action.payload);
+    },
+  },
+});
+
+export const { addMessage } = chatSlice.actions;
+export default chatSlice.reducer;
+```
