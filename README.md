@@ -712,3 +712,538 @@ export default WatchPage;
 ```
 
 ---
+
+# 🚀 Namaste Youtube - Advanced Features in Youtube Project
+
+## ⚡ Debouncing
+
+### Performance Comparison
+
+**Typing Speed:**
+
+- Typing Slow = 200ms
+- Typing Fast = 30ms
+
+**Performance Impact:**
+
+Without Debouncing:
+
+- iPhone Pro Max = 14 char × 1000 people = **140,000 API Calls**
+
+With Debouncing:
+
+- 3 API calls (depending upon typing speed) × 1000 people = **3,000 API Calls**
+
+### How Debouncing Works
+
+**Debouncing with 200ms:**
+
+- If difference between 2 key strokes is **less than 200ms** → **DECLINE API Call**
+- If difference is **>200ms** → **Make an API Call**
+
+---
+
+## 🔍 Search API Setup
+
+### Youtube Search API
+
+> **API URL:** `http://clients1.google.com/complete/search?hl=en&output=toolbar&q=YOURSEARCHTERM`
+
+### constants.js
+
+```js
+export const YOUTUBE_SEARCH_API =
+  "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=";
+```
+
+---
+
+## 🎯 Implementing Debouncing
+
+### Head.js (Basic Implementation)
+
+```js
+import { useDispatch } from "react-redux";
+import { toggleMenu } from "../utils/appSlice";
+import { useEffect, useState } from "react";
+import { YOUTUBE_SEARCH_API } from "../utils/constants";
+
+const Head = () => {
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    // make an API call after every key press
+    // but if the difference between 2 API calls is <200ms
+    // decline the API call
+
+    const timer = setTimeout(() => getSearchSuggestion(), 200);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  /**
+   * key - i
+   *  - render the component
+   *  - useEffect called
+   *  - start timer => make api call after 200ms
+   *
+   * key - ip
+   *  - searchQuery changes => state changes => re-render triggers => destroy the component (useEffect return method)
+   *  - re-render the component
+   *  - useEffect called
+   *  - start timer => make api call after 200ms
+   */
+
+  const getSearchSuggestion = async () => {
+    const data = await fetch(YOUTUBE_SEARCH_API + searchQuery);
+    const json = await data.json();
+    console.log(json[1]);
+  };
+
+  const handleToggleMenu = () => {
+    dispatch(toggleMenu());
+  };
+
+  return (
+    <div className="grid grid-flow-col p-4 shadow-lg items-center">
+      <div className="flex items-center gap-5 col-span-1">
+        <span
+          onClick={handleToggleMenu}
+          class="material-symbols-outlined cursor-pointer"
+        >
+          menu
+        </span>
+        <img
+          className="w-20"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/960px-YouTube_Logo_2017.svg.png"
+          alt="youtube-logo"
+        ></img>
+      </div>
+      <div className="col-span-10 flex items-center justify-center">
+        <input
+          className="border border-gray-400 w-1/2 rounded-l-3xl py-0.5 px-2"
+          type="text"
+          placeholder="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        ></input>
+        <button className="bg-gray-100 border border-gray-400 rounded-r-3xl px-4">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+      </div>
+      <div>
+        <span class="material-symbols-outlined w-10">account_circle</span>
+      </div>
+    </div>
+  );
+};
+
+export default Head;
+```
+
+---
+
+## 📋 Search Suggestions UI
+
+### Head.js (With Suggestions)
+
+```js
+import { useDispatch } from "react-redux";
+import { toggleMenu } from "../utils/appSlice";
+import { useEffect, useState } from "react";
+import { YOUTUBE_SEARCH_API } from "../utils/constants";
+
+const Head = () => {
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestion] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => getSearchSuggestion(), 200);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  const getSearchSuggestion = async () => {
+    const data = await fetch(YOUTUBE_SEARCH_API + searchQuery);
+    const json = await data.json();
+    setSuggestions(json[1]);
+  };
+
+  const handleToggleMenu = () => {
+    dispatch(toggleMenu());
+  };
+
+  return (
+    <div className="fixed w-full bg-white grid grid-flow-col p-4 shadow-lg items-center">
+      <div className="flex items-center gap-5 col-span-1">
+        <span
+          onClick={handleToggleMenu}
+          class="material-symbols-outlined cursor-pointer"
+        >
+          menu
+        </span>
+        <img
+          className="w-20"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/960px-YouTube_Logo_2017.svg.png"
+          alt="youtube-logo"
+        ></img>
+      </div>
+
+      <div className="col-span-10">
+        <div className="flex items-center justify-center">
+          <input
+            className="border border-gray-400 w-1/2 rounded-l-3xl py-0.5 px-2"
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              setShowSuggestion(true);
+            }}
+            onBlur={() => setShowSuggestion(false)}
+          ></input>
+          <button className="bg-gray-100 border border-gray-400 rounded-r-3xl px-4">
+            <span class="material-symbols-outlined">search</span>
+          </button>
+        </div>
+        {showSuggestions && suggestions && (
+          <div className="bg-white w-2/5 px-8 fixed mx-64 rounded-lg shadow-lg border border-gray-100">
+            <ul>
+              {suggestions.map((suggestion, index) => (
+                <li
+                  className="text-gray-700 border-b-2 border-gray-50"
+                  key={index}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <span class="material-symbols-outlined w-10">account_circle</span>
+      </div>
+    </div>
+  );
+};
+
+export default Head;
+```
+
+---
+
+## 💾 Caching Search Suggestions
+
+### searchSlice.js
+
+```js
+const { createSlice } = require("@reduxjs/toolkit");
+
+const searchSlice = createSlice({
+  name: "search",
+  initialState: {},
+  reducers: {
+    cacheResult: (state, action) => {
+      state = Object.assign(state, action.payload);
+    },
+  },
+});
+
+export const { cacheResult } = searchSlice.actions;
+export default searchSlice.reducer;
+```
+
+### appStore.js (Updated)
+
+```js
+import { configureStore } from "@reduxjs/toolkit";
+import appReducer from "./appSlice";
+import searchReducer from "./searchSlice";
+
+const appStore = configureStore({
+  reducer: {
+    app: appReducer,
+    search: searchReducer,
+  },
+});
+
+export default appStore;
+```
+
+### Head.js (With Caching)
+
+```js
+import { useDispatch, useSelector } from "react-redux";
+import { toggleMenu } from "../utils/appSlice";
+import { useEffect, useState } from "react";
+import { YOUTUBE_SEARCH_API } from "../utils/constants";
+import { cacheResult } from "../utils/searchSlice";
+
+const Head = () => {
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestion] = useState(false);
+
+  const searchCache = useSelector((store) => store.search);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (searchCache?.[searchQuery]) {
+        setSuggestions(searchCache[searchQuery]);
+      } else {
+        getSearchSuggestion();
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchCache]);
+
+  const getSearchSuggestion = async () => {
+    const data = await fetch(YOUTUBE_SEARCH_API + searchQuery);
+    const json = await data.json();
+    setSuggestions(json[1]);
+    // cache
+    dispatch(
+      cacheResult({
+        [searchQuery]: json[1],
+      })
+    );
+  };
+
+  const handleToggleMenu = () => {
+    dispatch(toggleMenu());
+  };
+
+  return (
+    <div className="fixed w-full bg-white grid grid-flow-col p-4 shadow-lg items-center">
+      <div className="flex items-center gap-5 col-span-1">
+        <span
+          onClick={handleToggleMenu}
+          class="material-symbols-outlined cursor-pointer"
+        >
+          menu
+        </span>
+        <img
+          className="w-20"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/960px-YouTube_Logo_2017.svg.png"
+          alt="youtube-logo"
+        ></img>
+      </div>
+
+      <div className="col-span-10">
+        <div className="flex items-center justify-center">
+          <input
+            className="border border-gray-400 w-1/2 rounded-l-3xl py-0.5 px-2"
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              setShowSuggestion(true);
+            }}
+            onBlur={() => setShowSuggestion(false)}
+          ></input>
+          <button className="bg-gray-100 border border-gray-400 rounded-r-3xl px-4">
+            <span class="material-symbols-outlined">search</span>
+          </button>
+        </div>
+        {showSuggestions && suggestions && (
+          <div className="bg-white w-2/5 px-8 fixed mx-64 rounded-lg shadow-lg border border-gray-100">
+            <ul>
+              {suggestions.map((suggestion, index) => (
+                <li
+                  className="text-gray-700 border-b-2 border-gray-50"
+                  key={index}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <span class="material-symbols-outlined w-10">account_circle</span>
+      </div>
+    </div>
+  );
+};
+
+export default Head;
+```
+
+---
+
+## 💬 Comments Section
+
+> **Note:** Recursion happening in `CommentList`
+
+### CommentsContainer.js (Initial Version)
+
+```js
+const commentsData = [
+  {
+    id: 1,
+    name: "Rahul",
+    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+    replies: [
+      {
+        id: 1,
+        name: "Rahul",
+        text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+        replies: [],
+      },
+      {
+        id: 2,
+        name: "Rahul",
+        text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+        replies: [],
+      },
+      {
+        id: 3,
+        name: "Rahul",
+        text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+        replies: [],
+      },
+      {
+        id: 4,
+        name: "Rahul",
+        text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+        replies: [],
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: "Rahul",
+    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+    replies: [],
+  },
+  {
+    id: 3,
+    name: "Rahul",
+    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+    replies: [],
+  },
+  {
+    id: 4,
+    name: "Rahul",
+    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Incidunt, expedita!",
+    replies: [],
+  },
+];
+
+const Comment = ({ data }) => {
+  const { name, text, replies } = data;
+  return (
+    <div className="flex p-2">
+      <span className="material-symbols-outlined w-10">account_circle</span>
+      <div>
+        <h1 className="font-bold">{name}</h1>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+};
+
+const CommentList = ({ commentsData }) => {
+  return (
+    <div>
+      {commentsData?.map((comment) => (
+        <div>
+          <Comment key={comment.id} data={comment} />
+          <div className="ml-4 pl-4  border-l-2 border-l-gray-400">
+            <CommentList commentsData={comment.replies} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CommentsContainer = () => {
+  return (
+    <div className="px-2 bg-gray-100 my-4 rounded-lg">
+      <h1 className="text-2xl font-bold">Comments</h1>
+      <CommentList commentsData={commentsData} />
+    </div>
+  );
+};
+
+export default CommentsContainer;
+```
+
+---
+
+## 🔄 Recursive Comments (Final Version)
+
+### CommentsContainer.js
+
+```js
+import { commentsData } from "../utils/constants";
+
+const Comment = ({ data }) => {
+  const { name, text } = data;
+  return (
+    <div className="flex p-2">
+      <span className="material-symbols-outlined w-10">account_circle</span>
+      <div>
+        <h1 className="font-bold">{name}</h1>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+};
+
+const CommentList = ({ commentsData }) => {
+  return (
+    <div>
+      {commentsData?.map((comment) => (
+        <div key={comment.id}>
+          <Comment data={comment} />
+          <div className="ml-4 pl-4  border-l-2 border-l-gray-400">
+            <CommentList commentsData={comment.replies} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CommentsContainer = () => {
+  return (
+    <div className="px-2 bg-gray-100 my-4 rounded-lg">
+      <h1 className="text-2xl font-bold">Comments</h1>
+      <CommentList commentsData={commentsData} />
+    </div>
+  );
+};
+
+export default CommentsContainer;
+```
+
+---
+
+## 📊 Features Summary
+
+| Feature                | Description                                   | Performance Benefit         |
+| ---------------------- | --------------------------------------------- | --------------------------- |
+| **Debouncing**         | Delays API calls until user stops typing      | Reduces API calls by ~95%   |
+| **Caching**            | Stores previous search results                | Instant results for repeats |
+| **Recursive Comments** | Nested comment structure with unlimited depth | Clean, scalable UI          |
+
+---

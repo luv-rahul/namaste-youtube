@@ -3,9 +3,9 @@ import { listOfButtons } from "../utils/constants";
 
 const ButtonList = () => {
   return (
-    <div className="flex">
-      {listOfButtons.map((button,index) => (
-        <Button btnName={button} key={index}/>
+    <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide w-full">
+      {listOfButtons.map((button, index) => (
+        <Button btnName={button} key={index} />
       ))}
     </div>
   );
