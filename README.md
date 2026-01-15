@@ -1492,3 +1492,7 @@ const chatSlice = createSlice({
 export const { addMessage } = chatSlice.actions;
 export default chatSlice.reducer;
 ```
+
+# Namaste React - useMemo(), useCallback(), useRef()
+
+- Study from documentation.
